@@ -1,6 +1,6 @@
 from pathlib import Path
 
-class File:
+class Media:
     def __init__(self, path, name):
         self.name = name
         self.path = Path(path, name)
@@ -9,4 +9,4 @@ class File:
         return str(self.path)
     
     def __repr__(self):
-        "File(name: {}, path: {})".format(self.name, self.path)
+        "Media(name: {}, path: {})".format(self.name, self.path)

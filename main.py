@@ -12,8 +12,7 @@ from pathlib import Path
 import random
 import subprocess
 
-from file import File
-
+from media import Media
 
 def error_handler():
     info = sys.exc_info()
@@ -23,9 +22,9 @@ def error_handler():
 def generate_file_list(path, reccurent = False):
     try:
         files = []
-        for path_name, dir_name, file_names in os.walk(path, topdown = True, onerror = error_handler):
+        for path_name, dir_names, file_names in os.walk(path, topdown = True, onerror = error_handler):
             for file_name in file_names:
-                file = File(path_name, file_name)
+                file = Media(path_name, file_name)
                 files.append(file)
 
             if not reccurent:
@@ -41,6 +40,7 @@ def random_file(files):
         return random.choice(files)
     except IndexError as e:
         logging.error(error_handler())
+        return []
         
     
 def random_files(files, nb_selected):
@@ -48,6 +48,7 @@ def random_files(files, nb_selected):
         return random.choices(files, k= nb_selected)
     except IndexError as e:
         logging.error(error_handler())
+        return []
 
 def open_file(file):
     try:
@@ -64,7 +65,7 @@ def open_file(file):
 def main():
     if  len(sys.argv) < 2:
         print("Add a directory")
-        return 
+        return
     
     path =  Path(str(sys.argv[1]))
     files = generate_file_list(path, True)
