@@ -13,13 +13,14 @@ from enum import Enum
 
 from media import Librarian, MediaType
 from error import error_handler
+from preference import Preference, PreferenceManager
     
 class State (Enum):
     STATE_ASK_MEDIA_TYPE = 0
     STATE_ASK_DIRECTORY = 1
     STATE_GENERATE_LIST = 2
     STATE_ASK_EMPTY = 3
-    STATE_ASK_PLAY_OPTION = 4
+    STATE_ASK_ACTION = 4
     STATE_RANDOM_MEDIA = 5
     STATE_GENERATE_SUGGESTION = 6
     STATE_ASK_SUGGESTION = 7
@@ -75,7 +76,7 @@ def ask_mediatype():
     media_type = MediaType.ANY
     if is_valid:
         if option == 0:
-            media_type = MediaType.SOUND
+            media_type = MediaType.AUDIO
         elif option == 1:
             media_type = MediaType.VIDEO
         else:
@@ -103,20 +104,26 @@ def ask_empty_folder():
     return is_valid, state
 
         
-def ask_play_option():
+def ask_action():
     options = [
             "Read a random media",
-            "Suggest media"
+            "Suggest media",
+            "Change folder",
+            "Change media type"
             ]
     
     is_valid, option = ask_option(options)
     
-    state = State.STATE_ASK_PLAY_OPTION
+    state = State.STATE_ASK_ACTION
     if is_valid:
         if option == 0:
             state = State.STATE_RANDOM_MEDIA
-        else:
+        elif option == 1:
             state = State.STATE_GENERATE_SUGGESTION
+        elif option == 2:
+            state = State.STATE_ASK_DIRECTORY
+        else:
+            state = State.STATE_ASK_MEDIA_TYPE
             
     return option, state
 
@@ -132,34 +139,41 @@ def aks_suggestion(media_list, default = 0):
     return is_valid, option
     
 def main():
-
-    
-    is_valid = False
-    path = Path()
-    state = State.STATE_ASK_MEDIA_TYPE
-    media_type =  MediaType.ANY
     media_list = []
     suggestions = []
+    preference = Preference()
     
+    preference_path = Path(os.path.expandvars(r'%LOCALAPPDATA%/Temp/Random_Player_qc/preference.json'))
+    
+    preference = PreferenceManager.loadFrom(preference_path)
+    print("{}".format(preference))
+    
+    if preference.directory == Path():
+        state = State.STATE_ASK_DIRECTORY
+    else:
+        state = State.STATE_GENERATE_LIST
+        
     while True:
-        if state == State.STATE_ASK_MEDIA_TYPE:
-            is_valid, media_type = ask_mediatype()
-            if is_valid:
-                state = State.STATE_ASK_DIRECTORY
-        elif state == State.STATE_ASK_DIRECTORY:
+        if state == State.STATE_ASK_DIRECTORY:
             is_valid, path = ask_directory("Media directory:")
             if is_valid:
+                preference.directory = path
+                state = State.STATE_ASK_MEDIA_TYPE
+        elif state == State.STATE_ASK_MEDIA_TYPE:
+            is_valid, media_type = ask_mediatype()
+            if is_valid:
+                preference.media_type = media_type
                 state = State.STATE_GENERATE_LIST
         elif state == State.STATE_GENERATE_LIST:
-            media_list = Librarian.generate_media_list(path, media_type = media_type, reccurent = True)
+            media_list = Librarian.generate_media_list(preference.directory, media_type = preference.media_type, reccurent = True)
             if not media_list:
                 state = State.STATE_ASK_EMPTY
             else:
-                state = State.STATE_ASK_PLAY_OPTION
+                state = State.STATE_ASK_ACTION
         elif state == State.STATE_ASK_EMPTY:
             is_valid, state = ask_empty_folder()
-        elif state == State.STATE_ASK_PLAY_OPTION:
-            is_valid, state = ask_play_option()
+        elif state == State.STATE_ASK_ACTION:
+            is_valid, state = ask_action()
         elif state == State.STATE_RANDOM_MEDIA:
             media = Librarian.random_media(media_list)
             state = State.STATE_PLAY
@@ -177,6 +191,9 @@ def main():
                 break;
         else:
             break;
+            
+    print("{}".format(preference.directory, preference.media_type))
+    PreferenceManager.saveTo(preference_path, preference)
     
 
 if __name__=="__main__":

@@ -15,9 +15,30 @@ import magic
 # -----------------------------------------------------------------------------
 class MediaType (Flag):
     UNKNOWN = 1 << 0
-    SOUND = 1 << 1
+    AUDIO = 1 << 1
     VIDEO = 1 << 2
     ANY = 0xFF
+    
+    def __str__(self):
+        if self == MediaType.UNKNOWN:
+            return "unknown"
+        elif self == MediaType.AUDIO:
+            return "audio"
+        elif self == MediaType.VIDEO:
+            return "video"
+        elif self == MediaType.ANY:
+            return "any"
+            
+    @staticmethod
+    def media_type_from_str(type_str):
+        if type_str == "audio":
+            return MediaType.AUDIO
+        elif type_str == "video":
+            return MediaType.VIDEO
+        elif type_str == "any":
+            return MediaType.ANY
+        else:
+            return MediaType.UNKNOWN
 
 
 # Media
@@ -60,10 +81,7 @@ class Media:
             return
             
         type_str = self.mime[:type_end]        
-        if type_str == "audio":
-            self.type = MediaType.SOUND
-        elif type_str == "video":
-            self.type = MediaType.VIDEO
+        self.type = MediaType.media_type_from_str(type_str)
         
 
 # Librarian
